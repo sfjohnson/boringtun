@@ -59,7 +59,6 @@ jobs:
 
       - name: Configure Rust for Android
         run: |
-          cp cargo-config.toml ~/.cargo/config
           rustup target add aarch64-linux-android
 
       - name: Build
@@ -67,6 +66,9 @@ jobs:
         with:
           command: build
           args: --lib --no-default-features --release --target aarch64-linux-android
+          env:
+            TARGET_CC: /usr/local/lib/android/sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android30-clang
+            TARGET_AR: /usr/local/lib/android/sdk/ndk-bundle/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android-ar
 
       - name: Rename build output
         run: mv target/aarch64-linux-android/release/libboringtun.a ./libboringtun-android30.a
