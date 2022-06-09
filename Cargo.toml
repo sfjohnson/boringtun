@@ -45,3 +45,4 @@ crate-type = ["staticlib"]
 [profile.release]
 debug = false
 lto = true
+panic = "abort"
