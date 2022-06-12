@@ -14,12 +14,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install beta toolchain
+      - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: beta
-          override: true
+          toolchain: nightly
 
       - name: Build
         uses: actions-rs/cargo@v1
@@ -50,11 +49,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install stable toolchain
+      - name: Install beta toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: beta
           override: true
 
       - name: Configure Rust for Android
