@@ -1,2 +1,2 @@
 [workspace]
-members = ["boringtun", "boringtun-cli"]
+members = ["boringtun"]
