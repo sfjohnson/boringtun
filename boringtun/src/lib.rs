@@ -5,13 +5,16 @@
 //!
 //! <code>git clone https://github.com/cloudflare/boringtun.git</code>
 
-pub mod crypto;
-
 #[cfg(not(any(target_os = "windows", target_os = "android", target_os = "ios")))]
 pub mod device;
 
+#[cfg(feature = "ffi-bindings")]
 pub mod ffi;
+#[cfg(feature = "jni-bindings")]
+pub mod jni;
 pub mod noise;
 
-#[cfg(target_os = "android")]
-pub mod jni;
+#[cfg(not(feature = "mock-instant"))]
+pub(crate) mod sleepyinstant;
+
+pub(crate) mod serialization;
