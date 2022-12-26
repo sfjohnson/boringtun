@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-10.15
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           persist-credentials: false
 
@@ -34,6 +34,7 @@ jobs:
           popd
           mv target/release/libboringtun.a ./libboringtun-macos10.a
           mv LICENSE.md LICENSE
+
       - name: Upload build output
         uses: actions/upload-artifact@v2
         with:
@@ -42,11 +43,42 @@ jobs:
             include.zip
             libboringtun-macos10.a
             LICENSE
+
+  build-macos-arm64:
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Install beta toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: beta
+          override: true
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --lib --release
+
+      - name: Prepare output
+        run: mv target/release/libboringtun.a ./libboringtun-macos-arm64.a
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-output-macos-arm64
+          path: libboringtun-macos-arm64.a
+
   build-android:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           persist-credentials: false
 
@@ -80,7 +112,7 @@ jobs:
 
   create-release:
     runs-on: ubuntu-20.04
-    needs: [build-macos, build-android]
+    needs: [build-macos, build-macos-arm64, build-android]
     steps:
       - name: Get build output macos10
         uses: actions/download-artifact@v2
@@ -98,6 +130,7 @@ jobs:
           files: |
             include.zip
             libboringtun-macos10.a
+            libboringtun-macos-arm64.a
             libboringtun-android30.a
             LICENSE
         env:
