@@ -44,7 +44,7 @@ struct x25519_key
 };
 
 // Generates a fresh x25519 secret key
-struct x25519_key x25519_secret_key();
+struct x25519_key x25519_secret_key(void);
 // Computes an x25519 public key from a secret key
 struct x25519_key x25519_public_key(struct x25519_key private_key);
 // Encodes a public or private x25519 key to base64. Must be freed with x25519_key_to_str_free.
