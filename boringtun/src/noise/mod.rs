@@ -12,6 +12,7 @@ use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::Handshake;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::timers::{TimerName, Timers};
+use crate::x25519;
 
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
@@ -191,24 +192,23 @@ impl Tunn {
 
     /// Create a new tunnel using own private key and the peer public key
     pub fn new(
-        static_private: x25519_dalek::StaticSecret,
-        peer_static_public: x25519_dalek::PublicKey,
+        static_private: x25519::StaticSecret,
+        peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
         persistent_keepalive: Option<u16>,
         index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
-    ) -> Result<Self, &'static str> {
-        let static_public = x25519_dalek::PublicKey::from(&static_private);
+    ) -> Self {
+        let static_public = x25519::PublicKey::from(&static_private);
 
-        let tunn = Tunn {
+        Tunn {
             handshake: Handshake::new(
                 static_private,
                 static_public,
                 peer_static_public,
                 index << 8,
                 preshared_key,
-            )
-            .map_err(|_| "Invalid parameters")?,
+            ),
             sessions: Default::default(),
             current: Default::default(),
             tx_bytes: Default::default(),
@@ -220,28 +220,25 @@ impl Tunn {
             rate_limiter: rate_limiter.unwrap_or_else(|| {
                 Arc::new(RateLimiter::new(&static_public, PEER_HANDSHAKE_RATE_LIMIT))
             }),
-        };
-
-        Ok(tunn)
+        }
     }
 
     /// Update the private key and clear existing sessions
     pub fn set_static_private(
         &mut self,
-        static_private: x25519_dalek::StaticSecret,
-        static_public: x25519_dalek::PublicKey,
+        static_private: x25519::StaticSecret,
+        static_public: x25519::PublicKey,
         rate_limiter: Option<Arc<RateLimiter>>,
-    ) -> Result<(), WireGuardError> {
+    ) {
         self.timers.should_reset_rr = rate_limiter.is_none();
         self.rate_limiter = rate_limiter.unwrap_or_else(|| {
             Arc::new(RateLimiter::new(&static_public, PEER_HANDSHAKE_RATE_LIMIT))
         });
         self.handshake
-            .set_static_private(static_private, static_public)?;
+            .set_static_private(static_private, static_public);
         for s in &mut self.sessions {
             *s = None;
         }
-        Ok(())
     }
 
     /// Encapsulate a single packet from the tunnel interface.
@@ -597,18 +594,17 @@ mod tests {
     use rand_core::{OsRng, RngCore};
 
     fn create_two_tuns() -> (Tunn, Tunn) {
-        let my_secret_key = x25519_dalek::StaticSecret::new(OsRng);
+        let my_secret_key = x25519_dalek::StaticSecret::random_from_rng(OsRng);
         let my_public_key = x25519_dalek::PublicKey::from(&my_secret_key);
         let my_idx = OsRng.next_u32();
 
-        let their_secret_key = x25519_dalek::StaticSecret::new(OsRng);
+        let their_secret_key = x25519_dalek::StaticSecret::random_from_rng(OsRng);
         let their_public_key = x25519_dalek::PublicKey::from(&their_secret_key);
         let their_idx = OsRng.next_u32();
 
-        let my_tun = Tunn::new(my_secret_key, their_public_key, None, None, my_idx, None).unwrap();
+        let my_tun = Tunn::new(my_secret_key, their_public_key, None, None, my_idx, None);
 
-        let their_tun =
-            Tunn::new(their_secret_key, my_public_key, None, None, their_idx, None).unwrap();
+        let their_tun = Tunn::new(their_secret_key, my_public_key, None, None, their_idx, None);
 
         (my_tun, their_tun)
     }
@@ -628,7 +624,7 @@ mod tests {
 
     fn create_handshake_response(tun: &mut Tunn, handshake_init: &[u8]) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];
-        let handshake_resp = tun.decapsulate(None, &handshake_init, &mut dst);
+        let handshake_resp = tun.decapsulate(None, handshake_init, &mut dst);
         assert!(matches!(handshake_resp, TunnResult::WriteToNetwork(_)));
 
         let handshake_resp = if let TunnResult::WriteToNetwork(sent) = handshake_resp {
@@ -642,7 +638,7 @@ mod tests {
 
     fn parse_handshake_resp(tun: &mut Tunn, handshake_resp: &[u8]) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];
-        let keepalive = tun.decapsulate(None, &handshake_resp, &mut dst);
+        let keepalive = tun.decapsulate(None, handshake_resp, &mut dst);
         assert!(matches!(keepalive, TunnResult::WriteToNetwork(_)));
 
         let keepalive = if let TunnResult::WriteToNetwork(sent) = keepalive {
@@ -656,7 +652,7 @@ mod tests {
 
     fn parse_keepalive(tun: &mut Tunn, keepalive: &[u8]) {
         let mut dst = vec![0u8; 2048];
-        let keepalive = tun.decapsulate(None, &keepalive, &mut dst);
+        let keepalive = tun.decapsulate(None, keepalive, &mut dst);
         assert!(matches!(keepalive, TunnResult::Done));
     }
 
@@ -689,7 +685,7 @@ mod tests {
         } else {
             unreachable!();
         };
-        let packet = Tunn::parse_incoming_packet(&packet_data).unwrap();
+        let packet = Tunn::parse_incoming_packet(packet_data).unwrap();
         assert!(matches!(packet, Packet::HandshakeInit(_)));
     }
 
