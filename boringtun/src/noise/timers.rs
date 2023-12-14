@@ -189,7 +189,7 @@ impl Tunn {
         let aut_packet_sent = self.timers[TimeLastPacketSent];
         let data_packet_received = self.timers[TimeLastDataPacketReceived];
         let data_packet_sent = self.timers[TimeLastDataPacketSent];
-        let persistent_keepalive = self.timers.persistent_keepalive;
+        let persistent_keepalive = self.timers.persistent_keepalive; // milliseconds
 
         {
             if self.handshake.is_expired() {
@@ -290,7 +290,7 @@ impl Tunn {
                     // Persistent KEEPALIVE
                     if persistent_keepalive > 0
                         && (now - self.timers[TimePersistentKeepalive]
-                            >= Duration::from_secs(persistent_keepalive as _))
+                            >= Duration::from_millis(persistent_keepalive as _))
                     {
                         tracing::debug!("KEEPALIVE(PERSISTENT_KEEPALIVE)");
                         self.timer_tick(TimePersistentKeepalive);

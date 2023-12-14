@@ -245,7 +245,7 @@ pub unsafe extern "C" fn new_tunnel(
     static_private: *const c_char,
     server_static_public: *const c_char,
     preshared_key: *const c_char,
-    keep_alive: u16,
+    keep_alive: u16, // milliseconds
     index: u32,
 ) -> *mut Mutex<Tunn> {
     let c_str = CStr::from_ptr(static_private);

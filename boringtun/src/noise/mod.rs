@@ -195,7 +195,7 @@ impl Tunn {
         static_private: x25519::StaticSecret,
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
-        persistent_keepalive: Option<u16>,
+        persistent_keepalive: Option<u16>, // milliseconds
         index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
     ) -> Self {
