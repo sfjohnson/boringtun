@@ -45,7 +45,7 @@ jobs:
             LICENSE
 
   build-macos-arm64:
-    runs-on: macos-13-xlarge
+    runs-on: flyci-macos-large-latest-m2
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -84,7 +84,7 @@ jobs:
 
       - name: Get RPi toolchain
         run: |
-          wget https://github.com/sfjohnson/rpi-toolchain/releases/download/v0.0.6/arm-rpi-linux-gnueabihf.tar.xz
+          wget https://github.com/sfjohnson/rpi-toolchain/releases/download/v0.0.8/arm-rpi-linux-gnueabihf.tar.xz
           tar xf arm-rpi-linux-gnueabihf.tar.xz -C ~
 
       - name: Install beta toolchain
