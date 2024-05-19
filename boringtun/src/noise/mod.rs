@@ -24,18 +24,18 @@ use std::time::Duration;
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
 
 const IPV4_MIN_HEADER_SIZE: usize = 20;
-const IPV4_LEN_OFF: usize = 2;
-const IPV4_SRC_IP_OFF: usize = 12;
+// const IPV4_LEN_OFF: usize = 2;
+// const IPV4_SRC_IP_OFF: usize = 12;
 const IPV4_DST_IP_OFF: usize = 16;
 const IPV4_IP_SZ: usize = 4;
 
 const IPV6_MIN_HEADER_SIZE: usize = 40;
-const IPV6_LEN_OFF: usize = 4;
-const IPV6_SRC_IP_OFF: usize = 8;
+// const IPV6_LEN_OFF: usize = 4;
+// const IPV6_SRC_IP_OFF: usize = 8;
 const IPV6_DST_IP_OFF: usize = 24;
 const IPV6_IP_SZ: usize = 16;
 
-const IP_LEN_SZ: usize = 2;
+// const IP_LEN_SZ: usize = 2;
 
 const MAX_QUEUE_DEPTH: usize = 256;
 /// number of sessions in the ring, better keep a PoT
@@ -462,48 +462,51 @@ impl Tunn {
     /// Check if an IP packet is v4 or v6, truncate to the length indicated by the length field
     /// Returns the truncated packet and the source IP as TunnResult
     fn validate_decapsulated_packet<'a>(&mut self, packet: &'a mut [u8]) -> TunnResult<'a> {
-        let (computed_len, src_ip_address) = match packet.len() {
-            0 => return TunnResult::Done, // This is keepalive, and not an error
-            _ if packet[0] >> 4 == 4 && packet.len() >= IPV4_MIN_HEADER_SIZE => {
-                let len_bytes: [u8; IP_LEN_SZ] = packet[IPV4_LEN_OFF..IPV4_LEN_OFF + IP_LEN_SZ]
-                    .try_into()
-                    .unwrap();
-                let addr_bytes: [u8; IPV4_IP_SZ] = packet
-                    [IPV4_SRC_IP_OFF..IPV4_SRC_IP_OFF + IPV4_IP_SZ]
-                    .try_into()
-                    .unwrap();
-                (
-                    u16::from_be_bytes(len_bytes) as usize,
-                    IpAddr::from(addr_bytes),
-                )
-            }
-            _ if packet[0] >> 4 == 6 && packet.len() >= IPV6_MIN_HEADER_SIZE => {
-                let len_bytes: [u8; IP_LEN_SZ] = packet[IPV6_LEN_OFF..IPV6_LEN_OFF + IP_LEN_SZ]
-                    .try_into()
-                    .unwrap();
-                let addr_bytes: [u8; IPV6_IP_SZ] = packet
-                    [IPV6_SRC_IP_OFF..IPV6_SRC_IP_OFF + IPV6_IP_SZ]
-                    .try_into()
-                    .unwrap();
-                (
-                    u16::from_be_bytes(len_bytes) as usize + IPV6_MIN_HEADER_SIZE,
-                    IpAddr::from(addr_bytes),
-                )
-            }
-            _ => return TunnResult::Err(WireGuardError::InvalidPacket),
-        };
+        // let (computed_len, src_ip_address) = match packet.len() {
+        //     0 => return TunnResult::Done, // This is keepalive, and not an error
+        //     _ if packet[0] >> 4 == 4 && packet.len() >= IPV4_MIN_HEADER_SIZE => {
+        //         let len_bytes: [u8; IP_LEN_SZ] = packet[IPV4_LEN_OFF..IPV4_LEN_OFF + IP_LEN_SZ]
+        //             .try_into()
+        //             .unwrap();
+        //         let addr_bytes: [u8; IPV4_IP_SZ] = packet
+        //             [IPV4_SRC_IP_OFF..IPV4_SRC_IP_OFF + IPV4_IP_SZ]
+        //             .try_into()
+        //             .unwrap();
+        //         (
+        //             u16::from_be_bytes(len_bytes) as usize,
+        //             IpAddr::from(addr_bytes),
+        //         )
+        //     }
+        //     _ if packet[0] >> 4 == 6 && packet.len() >= IPV6_MIN_HEADER_SIZE => {
+        //         let len_bytes: [u8; IP_LEN_SZ] = packet[IPV6_LEN_OFF..IPV6_LEN_OFF + IP_LEN_SZ]
+        //             .try_into()
+        //             .unwrap();
+        //         let addr_bytes: [u8; IPV6_IP_SZ] = packet
+        //             [IPV6_SRC_IP_OFF..IPV6_SRC_IP_OFF + IPV6_IP_SZ]
+        //             .try_into()
+        //             .unwrap();
+        //         (
+        //             u16::from_be_bytes(len_bytes) as usize + IPV6_MIN_HEADER_SIZE,
+        //             IpAddr::from(addr_bytes),
+        //         )
+        //     }
+        //     _ => return TunnResult::Err(WireGuardError::InvalidPacket),
+        // };
 
-        if computed_len > packet.len() {
-            return TunnResult::Err(WireGuardError::InvalidPacket);
-        }
+        // if computed_len > packet.len() {
+        //     return TunnResult::Err(WireGuardError::InvalidPacket);
+        // }
 
         self.timer_tick(TimerName::TimeLastDataPacketReceived);
-        self.rx_bytes += computed_len;
+        self.rx_bytes += packet.len();
 
-        match src_ip_address {
-            IpAddr::V4(addr) => TunnResult::WriteToTunnelV4(&mut packet[..computed_len], addr),
-            IpAddr::V6(addr) => TunnResult::WriteToTunnelV6(&mut packet[..computed_len], addr),
-        }
+        // DEBUG: sam was here
+        TunnResult::WriteToTunnelV4(packet, Ipv4Addr::new(0, 0, 0, 0))
+
+        // match src_ip_address {
+        //     IpAddr::V4(addr) => TunnResult::WriteToTunnelV4(&mut packet[..computed_len], addr),
+        //     IpAddr::V6(addr) => TunnResult::WriteToTunnelV6(&mut packet[..computed_len], addr),
+        // }
     }
 
     /// Get a packet from the queue, and try to encapsulate it
