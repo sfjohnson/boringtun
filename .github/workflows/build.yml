@@ -15,7 +15,9 @@ jobs:
           persist-credentials: false
 
       - name: Build
-        run: cargo build --lib --release
+        run: |
+          rustup default beta
+          cargo build --lib --release
 
       - name: Prepare output
         run: |
@@ -43,7 +45,9 @@ jobs:
           persist-credentials: false
 
       - name: Build
-        run: cargo build --lib --release
+        run: |
+          rustup default beta
+          cargo build --lib --release
 
       - name: Prepare output
         run: mv target/release/libboringtun.a ./libboringtun-macos-arm64.a
@@ -69,6 +73,7 @@ jobs:
 
       - name: Configure Rust for RPi
         run: |
+          rustup default beta
           cp cargo-config.toml ~/.cargo/config
           rustup target add aarch64-unknown-linux-gnu
 
